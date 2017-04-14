@@ -32,27 +32,6 @@ class PeerRecord:
         return str(self.peerHostname)+' '+str(self.peerPortNo)+' '+str(self.peerid)
 
 
-def RFC_register(data, clientsocket):
-    count=add_peer(data)
-    reply="Thank you for registering"
-    clientsocket.send(reply)
-
-def RFC_list(clientsocket):
-    reply,code,phrase=list_RFC()
-    response="P2P-CI/1.0 "+str(code)+" "+str(phrase)+"\n"
-    for i in reply:
-        reply_list=shlex.split(str(i))
-        response=response+str(reply_list[0])+" "+reply_list[1]+" "+reply_list[2]+" "+str(reply_list[3])+"\n"    
-    clientsocket.send(response)
-
-def RFC_lookup(clientsocket, rlist):
-    reply,code,phrase=find_RFC(rlist[1])
-    response="P2P-CI/1.0 "+str(code)+" "+str(phrase)+"\n"
-    for i in reply:
-        reply_list=shlex.split(str(i))
-        response=response+str(reply_list[0])+" "+reply_list[1]+" "+reply_list[2]+" "+str(reply_list[3])+"\n"
-    clientsocket.send(response)
-
 def RFC_add(clientsocket, rlist, count, data):
     reply,code,phrase=add_RFC(rlist[1],rlist,count)
     a=data.splitlines()
@@ -80,14 +59,15 @@ def peer_handler(data,clientsocket,clientaddr):
     print "*"*37
     rlist=shlex.split(data)
     if rlist[0] == 'REGISTER':
-        RFC_register(data, clientsocket)
-        #add_peer(data, clientsocket)
+        #RFC_register(data, clientsocket)
+        register(data, clientsocket)
 
     elif rlist[0] == 'LISTALL':
-        RFC_list(clientsocket)
+        listAll(clientsocket)
     
     elif rlist[0] == 'LOOKUP':
-        RFC_lookup(clientsocket)
+        #RFC_lookup(clientsocket, rlist)
+        search(clientsocket, rlist[1])
         
     elif rlist[0] == 'ADD':
         RFC_add(clientsocket, rlist, count, data)
@@ -129,7 +109,7 @@ def remove_client(rlist, count):
     for i in idx:
         del peer_list[i]
 
-def add_peer(data):
+def register(data, clientsocket):
     global count
     count = count+1
     rlist=shlex.split(data)
@@ -141,17 +121,17 @@ def add_peer(data):
     peer_list.insert(0,PeerRecord(rlist[3],rlist[5],count))
     for i,j in zip(c[::2],c[1::2]):
         index_list.insert(0,RFCRecord(i,j,rlist[3],count))
-    #reply="Thank you for registering"
-    #clientsocket.send(reply)
-    return count
+    reply="Thank you for registering"
+    clientsocket.send(reply)
+    #return count
 
-def list_RFC():
+def listAll(clientsocket):
     global status
     status=0
     global phrase
     phrase=''
 
-    temp=list()
+    reply=list()
     if not index_list:
         status=404
         phrase='BAD REQUEST'
@@ -161,18 +141,22 @@ def list_RFC():
                 if peer_record.peerid == x.peerid:
                     peer_port = peer_record.peerPortNo 
             #peer_port = get_port(x.peerid)
-            temp.append(RFCRecord(x.rfc_number,x.rfc_title,x.peerHostname,peer_port))
+            reply.append(RFCRecord(x.rfc_number,x.rfc_title,x.peerHostname,peer_port))
             status=200
             phrase='OK'
-    return temp,status,phrase
 
+    response="P2P-CI/1.0 "+str(status)+" "+str(phrase)+"\n"
+    for i in reply:
+        reply_list=shlex.split(str(i))
+        response=response+str(reply_list[0])+" "+reply_list[1]+" "+reply_list[2]+" "+str(reply_list[3])+"\n"    
+    clientsocket.send(response)
 
-def find_RFC(rfc_number):
-    temp=list()
+def search(clientsocket, rfc_number):
+    reply=list()
     flag=0
     for x in index_list:
         if int(x.rfc_number)==int(rfc_number):
-            temp.append(RFCRecord(x.rfc_number,x.rfc_title,x.peerHostname,x.peerid))
+            reply.append(RFCRecord(x.rfc_number,x.rfc_title,x.peerHostname,x.peerid))
             code=200
             phrase='OK'
             flag = 1
@@ -180,7 +164,12 @@ def find_RFC(rfc_number):
     if(flag==0):
         code=404
         phrase='FILE NOT FOUND'
-    return temp,code,phrase
+    
+    response="P2P-CI/1.0 "+str(code)+" "+str(phrase)+"\n"
+    for i in reply:
+        reply_list=shlex.split(str(i))
+        response=response+str(reply_list[0])+" "+reply_list[1]+" "+reply_list[2]+" "+str(reply_list[3])+"\n"
+    clientsocket.send(response)
 
 
 def add_RFC(rfc_number,rlist,count):
