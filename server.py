@@ -32,25 +32,6 @@ class PeerRecord:
         return str(self.peerHostname)+' '+str(self.peerPortNo)+' '+str(self.peerid)
 
 
-def RFC_add(clientsocket, rlist, count, data):
-    reply,code,phrase=add_RFC(rlist[1],rlist,count)
-    a=data.splitlines()
-    title=a[3].split(":")
-    response="P2P-CI/1.0 "+str(code)+" "+str(phrase)+"\n"
-    response=response+"RFC "+rlist[1]+" "+title[1]+" "+rlist[4]+" "+rlist[6]
-    clientsocket.send(response)
-
-def exit(rlist, count):
-    remove_client(rlist,count)
-    clientsocket.send("Bye")
-
-def RFC_remove(rlist, count):
-    remove_RFC(rlist[1],rlist,count)
-    clientsocket.send("Done")
-
-
-
-
 def peer_handler(data,clientsocket,clientaddr):
     global count
     print "*"*37
@@ -70,44 +51,15 @@ def peer_handler(data,clientsocket,clientaddr):
         search(clientsocket, rlist[1])
         
     elif rlist[0] == 'ADD':
-        RFC_add(clientsocket, rlist, count, data)
+        add_RFC(rlist, count, data, clientsocket)
         
     elif rlist[0] == 'EXIT':
         exit(rlist, count)
         
     elif rlist[0] == 'REMOVE':
-        RFC_remove(rlist, count)
+        remove(rlist, count)
         
 
-
-def remove_RFC(rfc_number,rlist,count):
-     rfc_pos = 0
-     phostname=rlist[4]
-     peerport=rlist[6]
-     rfc_title=rlist[8]
-     for q in index_list:
-        if q.rfc_number==rfc_number and q.peerHostname==phostname and q.peerid == count:
-            del index_list[rfc_pos]
-        rfc_pos = rfc_pos + 1
-            
-
-def remove_client(rlist, count):
-    global peerhost
-    templ=list()
-    temil=list()
-    phostname=rlist[3]
-    peerport=rlist[5]
-    for q in peer_list:
-        if q.peerPortNo==peerport:
-            peerhost=q.peerHostname
-            idx2=[x for x,y in enumerate(index_list) if y.peerHostname==str(peerhost)]
-            for i in sorted(idx2, reverse=True):
-                del index_list[i]
-    
-    
-    idx=[x for x,y in enumerate(peer_list) if y.peerPortNo==peerport]
-    for i in idx:
-        del peer_list[i]
 
 def register(data, clientsocket):
     global count
@@ -172,11 +124,49 @@ def search(clientsocket, rfc_number):
     clientsocket.send(response)
 
 
-def add_RFC(rfc_number,rlist,count):
-    index_list.insert(0,RFCRecord(rfc_number,rlist[8],rlist[4],count))
+def add_RFC(rlist, count, data, clientsocket):
+    index_list.insert(0,RFCRecord(rlist[1],rlist[8],rlist[4],count))
     code=200
     phrase='OK'
-    return index_list,code,phrase
+    a=data.splitlines()
+    title=a[3].split(":")
+    response="P2P-CI/1.0 "+str(code)+" "+str(phrase)+"\n"
+    response=response+"RFC "+rlist[1]+" "+title[1]+" "+rlist[4]+" "+rlist[6]
+    clientsocket.send(response)
+
+def exit(rlist, count):
+    global peerhost
+    templ=list()
+    temil=list()
+    phostname=rlist[3]
+    peerport=rlist[5]
+    for q in peer_list:
+        if q.peerPortNo==peerport:
+            peerhost=q.peerHostname
+            idx2=[x for x,y in enumerate(index_list) if y.peerHostname==str(peerhost)]
+            for i in sorted(idx2, reverse=True):
+                del index_list[i]
+    
+    
+    idx=[x for x,y in enumerate(peer_list) if y.peerPortNo==peerport]
+    for i in idx:
+        del peer_list[i]
+    clientsocket.send("Bye")
+
+"""def RFC_remove(rlist, count):
+    remove_RFC(rlist[1],rlist,count)
+    clientsocket.send("Done")"""
+
+def remove(rlist,count):
+    rfc_pos = 0
+    phostname=rlist[4]
+    peerport=rlist[6]
+    rfc_title=rlist[8]
+    for q in index_list:
+       if q.rfc_number==rlist[1] and q.peerHostname==phostname and q.peerid == count:
+           del index_list[rfc_pos]
+       rfc_pos = rfc_pos + 1
+    clientsocket.send("Done")
 
 def main_handler(clientsocket, clientaddr):
     data = clientsocket.recv(1024)
