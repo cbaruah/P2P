@@ -31,36 +31,6 @@ class PeerRecord:
     def __str__(self):
         return str(self.peerHostname)+' '+str(self.peerPortNo)+' '+str(self.peerid)
 
-
-def peer_handler(data,clientsocket,clientaddr):
-    global count
-    print "*"*37
-    print "Request received from Client :"
-    print data
-    print "*"*37
-    rlist=shlex.split(data)
-    if rlist[0] == 'REGISTER':
-        #RFC_register(data, clientsocket)
-        register(data, clientsocket)
-
-    elif rlist[0] == 'LISTALL':
-        listAll(clientsocket)
-    
-    elif rlist[0] == 'LOOKUP':
-        #RFC_lookup(clientsocket, rlist)
-        search(clientsocket, rlist[1])
-        
-    elif rlist[0] == 'ADD':
-        add_RFC(rlist, count, data, clientsocket)
-        
-    elif rlist[0] == 'EXIT':
-        exit(rlist, count)
-        
-    elif rlist[0] == 'REMOVE':
-        remove(rlist, count)
-        
-
-
 def register(data, clientsocket):
     global count
     count = count+1
@@ -170,7 +140,31 @@ def remove(rlist,count):
 
 def main_handler(clientsocket, clientaddr):
     data = clientsocket.recv(1024)
-    peer_handler(data,clientsocket,clientaddr)
+    global count
+    print "*"*37
+    print "Request received from Client :"
+    print data
+    print "*"*37
+    rlist=shlex.split(data)
+    if rlist[0] == 'REGISTER':
+        #RFC_register(data, clientsocket)
+        register(data, clientsocket)
+
+    elif rlist[0] == 'LISTALL':
+        listAll(clientsocket)
+    
+    elif rlist[0] == 'LOOKUP':
+        #RFC_lookup(clientsocket, rlist)
+        search(clientsocket, rlist[1])
+        
+    elif rlist[0] == 'ADD':
+        add_RFC(rlist, count, data, clientsocket)
+        
+    elif rlist[0] == 'EXIT':
+        exit(rlist, count)
+        
+    elif rlist[0] == 'REMOVE':
+        remove(rlist, count)
 
 
     
