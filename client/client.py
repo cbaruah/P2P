@@ -16,8 +16,12 @@ OS = platform.system()
 
 
 def rfc_request(message,rfc_number,peer_name,peer_port,file_name):
+    print "\nIn function blah blah"
     s=socket.socket()
+    print peer_name
     peer_ip= socket.gethostbyname(peer_name)
+    print peer_ip
+    print peer_port
     s.connect((peer_ip,peer_port))
     print "\nclient connected: \n"
     s.send(message)
@@ -120,6 +124,8 @@ def print_menu():
 
 def serv_resp_handler(message, serverIP, serverPort):
     sock = socket.socket()
+    print serverIP
+    print serverPort
     sock.connect((serverIP,serverPort))
     sock.send(message)
     reply = sock.recv(16384)
