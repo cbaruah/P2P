@@ -115,10 +115,18 @@ def input_data():
     return rfc_number,rfc_title
 
 
-def server_message(value):
+def server_message(value, rfc_number, HOST, PORT, rfc_title):
     global message
     message = value + " " + str(rfc_number) + " P2P-CI/1.0" + "\n" + " Host: " + HOST + "\n" + " Port: " + str(
         PORT) + "\n" + " Title: " + rfc_title
+
+
+def input_extra():
+    global name_peer, port_peer
+    print "Enter peer hostname(which contains the file): "
+    name_peer = raw_input()
+    print "Enter Peer port # : "
+    port_peer = int(raw_input())
 
 
 if __name__== "__main__":
@@ -143,27 +151,27 @@ if __name__== "__main__":
         therad_listen.start()
 
         temp_rfc = list()
+
         temp_title = list()
         print "Enter Host name of the Centralised Server"
         serverIP=raw_input()
-        serverPort = SERVER_PORT
         message = "REGISTER P2P-CI/1.0 Host: "+HOST+" Port: "+str(PORT)+"\n"
-        serv_resp_handler(message,serverIP,serverPort)
+        serv_resp_handler(message, serverIP, SERVER_PORT)
         file_list = os.listdir(os.getcwd())
+
         print file_list
         for file_name in file_list:
             files = file_name.split(".")
             if files[1] == "txt":
-                w = str(files[0])
-                a.append(w)
-                files1 = w.split("-")
-                temp_rfc.append(int(files1[0]))
+                a.append(str(files[0]))
+                files1 = str(files[0]).split("-")
                 temp_title.append(files1[1])
+                temp_rfc.append(int(files1[0]))
         
         print temp_rfc
         for x in range(len(temp_rfc)):
-            message = "ADD"+" "+str(temp_rfc[x])+" P2P-CI/1.0"+"\n"+" Host: "+HOST+"\n"+" Port: "+str(PORT)+"\n"+" Title: "+temp_title[x]
-            serv_resp_handler(message,serverIP,serverPort)
+            server_message("ADD", temp_rfc[x], HOST, PORT, temp_title[x])
+            serv_resp_handler(message, serverIP, SERVER_PORT)
 
         condition = True
         while condition:
@@ -179,25 +187,22 @@ if __name__== "__main__":
 
             if choice == 1:
                 message="LISTALL P2P-CI/1.0"+"\n"+"Host: "+HOST+"\n"+" Port: "+str(PORT)
-                serv_resp_handler(message,serverIP,serverPort)
+                serv_resp_handler(message, serverIP, SERVER_PORT)
                 
             if choice == 2:
                 rfc_number,rfc_title=input_data()
-                server_message("LOOKUP")
-                serv_resp_handler(message,serverIP,serverPort)
+                server_message("LOOKUP", rfc_number, HOST, PORT, rfc_title)
+                serv_resp_handler(message, serverIP, SERVER_PORT)
 
             if choice == 3:
                 rfc_number, rfc_title = input_data()
                 a.insert(0,str(rfc_number))
-                server_message("ADD")
-                serv_resp_handler(message,serverIP,serverPort)
+                server_message("ADD", rfc_number, HOST, PORT, rfc_title)
+                serv_resp_handler(message, serverIP, SERVER_PORT)
                                 
             if choice == 4:
                 rfc_number,rfc_title=input_data()
-                print "Enter peer hostname(which contains the file): "
-                name_peer = raw_input()
-                print "Enter Peer port # : "
-                port_peer = int(raw_input()) 
+                input_extra()
                 message = "GET RFC " +str(rfc_number)+ " " +"P2P-CI/1.0\n"+"Host: "+name_peer+"\n"+"OS: "+str(OS)
                 file_name = str(rfc_number)+"-"+rfc_title
 
@@ -230,24 +235,20 @@ if __name__== "__main__":
                     status = False
 
                 if status == True:
-                    #add rfc
                     a.insert(0,str(rfc_number))
-                    message="ADD"+" "+ str(rfc_number) +" P2P-CI/1.0"+"\n"+" Host: "+HOST+"\n"+" Port: "+str(PORT)+"\n"+" Title: "+rfc_title
-                    serv_resp_handler(message,serverIP,serverPort)
+                    server_message("ADD", rfc_number, HOST, PORT, rfc_title)
+                    serv_resp_handler(message, serverIP, SERVER_PORT)
 
             if choice == 5:
-                print "Enter RFC number"
-                rfc_number = int(raw_input())
-                print "Enter RFC title"
-                rfc_title = raw_input()
+                rfc_number, rfc_title = input_data()
                 str_file_name = str(rfc_number)+"-"+rfc_title+".txt"
                 os.remove(str_file_name)
-                message = "REMOVE"+" "+str(rfc_number)+" P2P-CI/1.0"+"\n"+" Host: "+HOST+"\n"+" Port: "+str(PORT)+"\n"+" Title: "+rfc_title
-                serv_resp_handler(message, serverIP, serverPort)
+                server_message("REMOVE", rfc_number, HOST, PORT, rfc_title)
+                serv_resp_handler(message, serverIP, SERVER_PORT)
 
             if choice == 6:
                 message = "EXIT P2P-CI/1.0 Host: "+HOST+" Port: "+str(PORT)
-                serv_resp_handler(message, serverIP, serverPort)
+                serv_resp_handler(message, serverIP, SERVER_PORT)
                 EXIT_FLAG
                 EXIT_FLAG = True
                           
