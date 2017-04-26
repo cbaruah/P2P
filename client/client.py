@@ -28,28 +28,31 @@ def rfc_retrieve(name, sock):
 def loop_val(file_found, rfc_number):
     for x in a:
         t = x.split("-")
-        if int(t[0]) == int(rfc_number[2]):
-            print t[0]
-            file_found = 1
-            file_name = str(x) + ".txt"
+        if True:
+            if int(t[0]) == int(rfc_number[2]):
+                file_found = 1
+                print t[0]
+                file_name = str(x) + ".txt"
     return file_found, file_name
 
 
 def field_condition(file_found, file_name, sock):
     if file_found == 0:
         print "File not found"
-        file_data = "P2P-CI/1.0 404 FILE NOT FOUND" + "\n"
-        sock.send(file_data)
+        sock.send("P2P-CI/1.0 404 FILE NOT FOUND" + "\n")
     else:
-        file_data = "P2P-CI/1.0 200 OK" + "\n"
-        sock.send(file_data)
+        sock.send("P2P-CI/1.0 200 OK" + "\n")
         with open(file_name, 'r') as f:
-            bytesToSend = f.read(1024)
-            sock.send(bytesToSend)
+            bytesToSend = byte_send(f, sock)
             while bytesToSend != "":
-                bytesToSend = f.read(1024)
-                sock.send(bytesToSend)
+                bytesToSend = byte_send(f, sock)
     sock.close()
+
+
+def byte_send(f, sock):
+    bytesToSend = f.read(1024)
+    sock.send(bytesToSend)
+    return bytesToSend
 
 
 def client_resp():
@@ -69,9 +72,9 @@ def init_thread(peer_socket):
 
 
 def init():
-    cs_socket = socket.socket()
     cs_host = socket.gethostname()
     cs_port = PORT
+    cs_socket = socket.socket()
     cs_socket.bind((cs_host, cs_port))
     cs_socket.listen(2)
     cs_thread = threading.current_thread()
@@ -79,14 +82,13 @@ def init():
 
 
 def serv_resp_handler(message, serverIP, serverPort):
+    print "~" * 100
+    print "Server Response"
     sock = socket.socket()
     sock.connect((serverIP,serverPort))
     sock.send(message)
-    reply = sock.recv(16384)
-    print "*"*40
-    print "Response received from Server:"
-    print reply
-    print "*"*40
+    print sock.recv(16384)
+    print "~"*100
     sock.close()
 
 def loop_condition():
