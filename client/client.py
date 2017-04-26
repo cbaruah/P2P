@@ -15,39 +15,6 @@ EXIT_FLAG = False
 OS = platform.system()
 
 
-def rfc_request(message,rfc_number,peer_name,peer_port,file_name):
-    print "\nIn function blah blah"
-    s=socket.socket()
-    print peer_name
-    peer_ip= socket.gethostbyname(peer_name)
-    print peer_ip
-    print peer_port
-    s.connect((peer_ip,peer_port))
-    print "\nclient connected: \n"
-    s.send(message)
-    reply=s.recv(1024)
-    reply_list=shlex.split(reply)
-    os.chdir(os.getcwd())
-    file_name=file_name+".txt"
-    if str(reply_list[1])=='200':
-        file1=open(file_name,'wb')
-        while True:
-            q=s.recv(1024)
-            if q:
-                file1.write(q)
-                break
-            else:
-                file1.close()
-                print "File %s downloaded successfully\n" % (file_name)
-                break
-        s.close()
-    else:
-        print "File Not Found"
-        s.close()
-        return False
-    return True
-
-
 def rfc_retrieve(name, sock):
     request=sock.recv(1024)
     print request
@@ -75,27 +42,7 @@ def rfc_retrieve(name, sock):
                 sock.send(bytesToSend)
     sock.close()
 
-
-def rfc_create_list():
-    global a
-    file_list = os.listdir(os.getcwd())
-    temp_rfc = list()
-    temp_title = list()
-    print file_list
-    for file_name in file_list:
-        files = file_name.split(".")
-        if files[1] == "txt":
-            w = str(files[0])
-            a.append(w)
-            files1 = w.split("-")
-            temp_rfc.append(int(files1[0]))
-            temp_title.append(files1[1])
-    return temp_rfc,temp_title
-
-
-
 def listen_on_client():
-
     cs_socket = socket.socket()
     cs_host = socket.gethostname()
     cs_port = PORT
@@ -113,15 +60,6 @@ def listen_on_client():
     cs_socket.close()
     return
 
-def print_menu():
-    print "Select from the List"
-    print "1. List all RFC"
-    print "2. Lookup RFC"
-    print "3. Add RFC"
-    print "4. Get RFC file"
-    print "5. Remove RFC"
-    print "6. Exit"
-
 def serv_resp_handler(message, serverIP, serverPort):
     sock = socket.socket()
     print serverIP
@@ -138,15 +76,13 @@ def serv_resp_handler(message, serverIP, serverPort):
 def loop_condition():
     while True:
         try:
-            # Note: Python 2.x users should use raw_input, the equivalent of 3.x's input
+            
             condition = int(input("Do you want to continue(1/0): "))
         except ValueError:
             print("Sorry, I didn't understand that.")
-            #better try again... Return to the start of the loop
+            
             continue
         else:
-            #age was successfully parsed!
-            #we're ready to exit the loop.
             break
     if condition == 1: 
         return True
@@ -159,6 +95,7 @@ if __name__== "__main__":
     global HOST
     global PORT
     global IP
+    global a
 
     HOST = ''
     PORT = 0
@@ -181,7 +118,17 @@ if __name__== "__main__":
         serverPort = SERVER_PORT
         message = "REGISTER P2P-CI/1.0 Host: "+HOST+" Port: "+str(PORT)+"\n"
         serv_resp_handler(message,serverIP,serverPort)
-        temp_rfc, temp_title=rfc_create_list()
+        file_list = os.listdir(os.getcwd())
+        print file_list
+        for file_name in file_list:
+            files = file_name.split(".")
+            if files[1] == "txt":
+                w = str(files[0])
+                a.append(w)
+                files1 = w.split("-")
+                temp_rfc.append(int(files1[0]))
+                temp_title.append(files1[1])
+        
         print temp_rfc
         for x in range(len(temp_rfc)):
             message = "ADD"+" "+str(temp_rfc[x])+" P2P-CI/1.0"+"\n"+" Host: "+HOST+"\n"+" Port: "+str(PORT)+"\n"+" Title: "+temp_title[x]
@@ -189,7 +136,13 @@ if __name__== "__main__":
 
         condition = True
         while condition:
-            print_menu()
+            print "Select"
+            print "1. List all RFC"
+            print "2. Search RFC"
+            print "3. Add RFC"
+            print "4. Download RFC"
+            print "5. Delete RFC"
+            print "6. Exit"
 
             choice = int(raw_input("Enter you Choice: "))
 
@@ -225,7 +178,35 @@ if __name__== "__main__":
                 port_peer = int(raw_input()) 
                 message = "GET RFC " +str(rfc_number)+ " " +"P2P-CI/1.0\n"+"Host: "+name_peer+"\n"+"OS: "+str(OS)
                 file_name = str(rfc_number)+"-"+rfc_title
-                status = rfc_request(message,rfc_number,name_peer,port_peer,file_name)
+
+                s=socket.socket()
+                peer_ip= socket.gethostbyname(name_peer)
+                s.connect((peer_ip,port_peer))
+                print "\nclient connected: \n"
+                s.send(message)
+                reply=s.recv(1024)
+                reply_list=shlex.split(reply)
+                os.chdir(os.getcwd())
+                file_name=file_name+".txt"
+                if str(reply_list[1])=='200':
+                    file1=open(file_name,'wb')
+                    while True:
+                        q=s.recv(1024)
+                        if q:
+                            file1.write(q)
+                            status = True
+                            break
+                        else:
+                            file1.close()
+                            print "File %s downloaded successfully\n" % (file_name)
+                            status = True
+                            break
+                    s.close()
+                else:
+                    print "File Not Found"
+                    s.close()
+                    status = False
+
                 if status == True:
                     #add rfc
                     a.insert(0,str(rfc_number))
