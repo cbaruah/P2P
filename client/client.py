@@ -20,21 +20,30 @@ def rfc_retrieve(name, sock):
     print request
     rfc_number=shlex.split(request)
     file_found = 0
+    file_found, file_name = loop_val(file_found, rfc_number)
+
+    field_condition(file_found, file_name, sock)
+
+
+def loop_val(file_found, rfc_number):
     for x in a:
         t = x.split("-")
-        if int(t[0])==int(rfc_number[2]):
+        if int(t[0]) == int(rfc_number[2]):
             print t[0]
-            file_found=1
-            file_name=str(x)+".txt"
+            file_found = 1
+            file_name = str(x) + ".txt"
+    return file_found, file_name
 
-    if file_found==0:
+
+def field_condition(file_found, file_name, sock):
+    if file_found == 0:
         print "File not found"
-        file_data="P2P-CI/1.0 404 FILE NOT FOUND"+"\n"
+        file_data = "P2P-CI/1.0 404 FILE NOT FOUND" + "\n"
         sock.send(file_data)
     else:
-        file_data="P2P-CI/1.0 200 OK"+"\n"
+        file_data = "P2P-CI/1.0 200 OK" + "\n"
         sock.send(file_data)
-        with open(file_name,'r') as f:
+        with open(file_name, 'r') as f:
             bytesToSend = f.read(1024)
             sock.send(bytesToSend)
             while bytesToSend != "":
@@ -42,28 +51,35 @@ def rfc_retrieve(name, sock):
                 sock.send(bytesToSend)
     sock.close()
 
-def listen_on_client():
-    cs_socket = socket.socket()
-    cs_host = socket.gethostname()
-    cs_port = PORT
-    cs_socket.bind((cs_host,cs_port))
-    cs_socket.listen(2)
 
-    cs_thread = threading.current_thread()
+def client_resp():
+    cs_socket = init()
     while(EXIT_FLAG != True):
-
         (peer_socket,peer_addr)=cs_socket.accept()
         print "Connected to", peer_addr
-        thread_third=threading.Thread(target=rfc_retrieve,args=("retrThread",peer_socket))
-        thread_third.start()
-        thread_third.join()
+        init_thread(peer_socket)
     cs_socket.close()
     return
 
+
+def init_thread(peer_socket):
+    thread_third = threading.Thread(target=rfc_retrieve, args=("retrThread", peer_socket))
+    thread_third.start()
+    thread_third.join()
+
+
+def init():
+    cs_socket = socket.socket()
+    cs_host = socket.gethostname()
+    cs_port = PORT
+    cs_socket.bind((cs_host, cs_port))
+    cs_socket.listen(2)
+    cs_thread = threading.current_thread()
+    return cs_socket
+
+
 def serv_resp_handler(message, serverIP, serverPort):
     sock = socket.socket()
-    print serverIP
-    print serverPort
     sock.connect((serverIP,serverPort))
     sock.send(message)
     reply = sock.recv(16384)
@@ -97,6 +113,12 @@ def input_data():
     return rfc_number,rfc_title
 
 
+def server_message(value):
+    global message
+    message = value + " " + str(rfc_number) + " P2P-CI/1.0" + "\n" + " Host: " + HOST + "\n" + " Port: " + str(
+        PORT) + "\n" + " Title: " + rfc_title
+
+
 if __name__== "__main__":
 
     global HOST
@@ -112,7 +134,7 @@ if __name__== "__main__":
     PORT = int(raw_input())
 
     try:
-        therad_listen = threading.Thread(target=listen_on_client)
+        therad_listen = threading.Thread(target=client_resp)
 
         therad_listen.daemon = True
 
@@ -159,16 +181,13 @@ if __name__== "__main__":
                 
             if choice == 2:
                 rfc_number,rfc_title=input_data()
-                message="LOOKUP"+" "+str(rfc_number)+" P2P-CI/1.0"+"\n"+"Host: "+HOST+"\n"+"Port: "+str(PORT)+"\n"+"Title:"+rfc_title
+                server_message("LOOKUP")
                 serv_resp_handler(message,serverIP,serverPort)
 
             if choice == 3:
-                print "Enter RFC #: "
-                rfc_number = raw_input()
-                print "Enter RFC title: "
-                rfc_title = raw_input()
+                rfc_number, rfc_title = input_data()
                 a.insert(0,str(rfc_number))
-                message="ADD"+" "+rfc_number+" P2P-CI/1.0"+"\n"+" Host: "+HOST+"\n"+" Port: "+str(PORT)+"\n"+" Title: "+rfc_title
+                server_message("ADD")
                 serv_resp_handler(message,serverIP,serverPort)
                                 
             if choice == 4:
