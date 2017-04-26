@@ -89,6 +89,13 @@ def loop_condition():
     else:
         print exit
 
+def input_data():
+    print "Enter RFC number"
+    rfc_number = int(raw_input())
+    print "Enter RFC title"
+    rfc_title=raw_input()
+    return rfc_number,rfc_title
+
 
 if __name__== "__main__":
 
@@ -151,27 +158,21 @@ if __name__== "__main__":
                 serv_resp_handler(message,serverIP,serverPort)
                 
             if choice == 2:
-                print "Enter RFC number"
-                rfc_number = int(raw_input())
-                print "Enter RFC title"
-                rfc_title=raw_input()
+                rfc_number,rfc_title=input_data()
                 message="LOOKUP"+" "+str(rfc_number)+" P2P-CI/1.0"+"\n"+"Host: "+HOST+"\n"+"Port: "+str(PORT)+"\n"+"Title:"+rfc_title
                 serv_resp_handler(message,serverIP,serverPort)
 
             if choice == 3:
-                print "Enter RFC number"
-                rfc_number=raw_input()
-                print "Enter the title for the RFC"
-                rfc_title=raw_input()
+                print "Enter RFC #: "
+                rfc_number = raw_input()
+                print "Enter RFC title: "
+                rfc_title = raw_input()
                 a.insert(0,str(rfc_number))
                 message="ADD"+" "+rfc_number+" P2P-CI/1.0"+"\n"+" Host: "+HOST+"\n"+" Port: "+str(PORT)+"\n"+" Title: "+rfc_title
                 serv_resp_handler(message,serverIP,serverPort)
                                 
             if choice == 4:
-                print "Enter RFC #: "
-                rfc_number = int(raw_input())
-                print "Enter RFC title: "
-                rfc_title = raw_input()
+                rfc_number,rfc_title=input_data()
                 print "Enter peer hostname(which contains the file): "
                 name_peer = raw_input()
                 print "Enter Peer port # : "
