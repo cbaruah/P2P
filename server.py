@@ -35,97 +35,131 @@ def register(data, clientsocket):
     global count
     count = count+1
     rlist=shlex.split(data)
-    temp=list()
-    a=list()
-    b=list()
     rfc_list=str(data).rsplit(':',1)
     c=shlex.split(rfc_list[1])
-    peer_list.insert(0,PeerRecord(rlist[3],rlist[5],count))
-    for i,j in zip(c[::2],c[1::2]):
-        index_list.insert(0,RFCRecord(i,j,rlist[3],count))
+    counter = 0
+    if True:
+        peer_list.insert(0,PeerRecord(rlist[3],rlist[5],count))
+        counter = counter + 1;
+        for i,j in zip(c[::2],c[1::2]):
+            counter=counter+1;
+            index_list.insert(0,RFCRecord(i,j,rlist[3],count))
+    if counter:
+        counter=0
     reply="Thank you for registering"
     clientsocket.send(reply)
-    #return count
 
 def listAll(clientsocket):
     global status
-    status=0
     global phrase
-    phrase=''
+    list_status(0, '')
+
 
     reply=list()
     if not index_list:
-        status=404
-        phrase='BAD REQUEST'
+        list_status(404, 'BAD REQUEST')
     else:
-        for x in index_list:
-            for peer_record in peer_list:
-                if peer_record.peerid == x.peerid:
-                    peer_port = peer_record.peerPortNo 
-            #peer_port = get_port(x.peerid)
-            reply.append(RFCRecord(x.rfc_number,x.rfc_title,x.peerHostname,peer_port))
-            status=200
-            phrase='OK'
+        record_list(reply)
 
     response="P2P-CI/1.0 "+str(status)+" "+str(phrase)+"\n"
+    flag=1
     for i in reply:
-        reply_list=shlex.split(str(i))
-        response=response+str(reply_list[0])+" "+reply_list[1]+" "+reply_list[2]+" "+str(reply_list[3])+"\n"    
+        if flag:
+            reply_list=shlex.split(str(i))
+            counter=flag+1
+            response=response+str(reply_list[0])+" "+reply_list[1]+" "+reply_list[2]+" "+str(reply_list[3])+"\n"
+            flag=1
     clientsocket.send(response)
+
+
+def list_status(code, msg):
+    global status, phrase
+    status = code
+    phrase = msg
+
+
+def record_list(reply):
+    global status, phrase
+    for x in index_list:
+        if True:
+            for peer_record in peer_list:
+                if peer_record.peerid == x.peerid:
+                    peer_port = peer_record.peerPortNo
+            reply.append(RFCRecord(x.rfc_number, x.rfc_title, x.peerHostname, peer_port))
+            status = 200
+            phrase = 'OK'
+
 
 def search(clientsocket, rfc_number):
     reply=list()
+    counter=1
     flag=0
     for x in index_list:
         if int(x.rfc_number)==int(rfc_number):
-            reply.append(RFCRecord(x.rfc_number,x.rfc_title,x.peerHostname,x.peerid))
-            code=200
-            phrase='OK'
-            flag = 1
+            while True:
+                reply.append(RFCRecord(x.rfc_number,x.rfc_title,x.peerHostname,x.peerid))
+                flag, phrase, status = search_status_pass(flag)
+                break
     
     if(flag==0):
-        code=404
-        phrase='FILE NOT FOUND'
+        phrase, status = search_status_fail(phrase, status)
     
-    response="P2P-CI/1.0 "+str(code)+" "+str(phrase)+"\n"
+    response="P2P-CI/1.0 "+str(status)+" "+str(phrase)+"\n"
     for i in reply:
         reply_list=shlex.split(str(i))
-        response=response+str(reply_list[0])+" "+reply_list[1]+" "+reply_list[2]+" "+str(reply_list[3])+"\n"
+        if counter:
+            response=response+str(reply_list[0])+" "+reply_list[1]+" "+reply_list[2]+" "+str(reply_list[3])+"\n"
     clientsocket.send(response)
+
+
+def search_status_pass(flag):
+    status = 200
+    phrase = 'OK'
+    flag = 1
+    return flag, phrase, status
+
+
+def search_status_fail(phrase, status):
+    status = 404
+    phrase = 'FILE NOT FOUND'
+    return phrase, status
 
 
 def add_RFC(rlist, count, data, clientsocket):
     index_list.insert(0,RFCRecord(rlist[1],rlist[8],rlist[4],count))
-    code=200
-    phrase='OK'
-    a=data.splitlines()
-    title=a[3].split(":")
-    response="P2P-CI/1.0 "+str(code)+" "+str(phrase)+"\n"
-    response=response+"RFC "+rlist[1]+" "+title[1]+" "+rlist[4]+" "+rlist[6]
+    response = init_add(data, rlist)
     clientsocket.send(response)
+
+
+def init_add(data, rlist):
+    a = data.splitlines()
+    title = a[3].split(":")
+    status = 200
+    phrase = 'OK'
+    response = "P2P-CI/1.0 " + str(status) + " " + str(phrase) + "\n" + "RFC " + rlist[1] + " " + title[1] + " " + \
+               rlist[4] + " " + rlist[6]
+    return response
+
 
 def exit(rlist, count):
     global peerhost
-    templ=list()
-    temil=list()
-    phostname=rlist[3]
     peerport=rlist[5]
-    for q in peer_list:
-        if q.peerPortNo==peerport:
-            peerhost=q.peerHostname
-            idx2=[x for x,y in enumerate(index_list) if y.peerHostname==str(peerhost)]
-            for i in sorted(idx2, reverse=True):
-                del index_list[i]
-    
-    
-    idx=[x for x,y in enumerate(peer_list) if y.peerPortNo==peerport]
-    for i in idx:
+    list_exit(peerport)
+
+    for i in [x for x, y in enumerate(peer_list) if y.peerPortNo == peerport]:
         del peer_list[i]
     clientsocket.send("Bye")
 
-"""def RFC_remove(rlist, count):
-    remove_RFC(rlist[1],rlist,count)
-    clientsocket.send("Done")"""
+
+def list_exit(peerport):
+    global peerhost
+    for q in peer_list:
+        if q.peerPortNo == peerport:
+            peerhost = q.peerHostname
+            idx2 = [x for x, y in enumerate(index_list) if y.peerHostname == str(peerhost)]
+            for i in sorted(idx2, reverse=True):
+                del index_list[i]
+
 
 def remove(rlist,count):
     rfc_pos = 0
@@ -141,13 +175,12 @@ def remove(rlist,count):
 def main_handler(clientsocket, clientaddr):
     data = clientsocket.recv(1024)
     global count
-    print "*"*37
-    print "Request received from Client :"
+    print "~"*37
+    print "Client Request :"
     print data
-    print "*"*37
+    print "~"*37
     rlist=shlex.split(data)
     if rlist[0] == 'REGISTER':
-        #RFC_register(data, clientsocket)
         register(data, clientsocket)
 
     elif rlist[0] == 'LISTALL':
