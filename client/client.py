@@ -182,8 +182,7 @@ if __name__== "__main__":
             print "2. Search RFC"
             print "3. Add RFC"
             print "4. Download RFC"
-            print "5. Delete RFC"
-            print "6. Exit"
+            print "5. Exit"
 
             choice = int(raw_input("Enter you Choice: "))
 
@@ -239,17 +238,18 @@ if __name__== "__main__":
                     serv_resp_handler(message, serverIP, SERVER_PORT)
 
             if choice == 5:
+                message = "EXIT P2P-CI/1.0 Host: "+HOST+" Port: "+str(PORT)
+                serv_resp_handler(message, serverIP, SERVER_PORT)
+                EXIT_FLAG
+                EXIT_FLAG = True
+
+            if choice == 6:
                 rfc_number, rfc_title = input_data()
                 str_file_name = str(rfc_number)+"-"+rfc_title+".txt"
                 os.remove(str_file_name)
                 server_message("REMOVE", rfc_number, HOST, PORT, rfc_title)
                 serv_resp_handler(message, serverIP, SERVER_PORT)
-
-            if choice == 6:
-                message = "EXIT P2P-CI/1.0 Host: "+HOST+" Port: "+str(PORT)
-                serv_resp_handler(message, serverIP, SERVER_PORT)
-                EXIT_FLAG
-                EXIT_FLAG = True
+                
                           
             condition = loop_condition()       
 
