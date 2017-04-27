@@ -1,21 +1,22 @@
 import socket
-import threading
 import os
 import shlex
+import threading
 
+index_list=list()
 count=0
 peer_list=list()
-index_list=list()
-rfcList=list()
 SERVER_PORT = 7734
+rfcList=list()
+
     
     
 class RFCRecord:
     def __init__(self, rfc_number = -1, rfc_title = 'None', peerHostname ='None', peerid =-1):
         self.rfc_number = rfc_number
-        self.rfc_title = rfc_title
+        self.peerid = peerid
         self.peerHostname = peerHostname
-        self.peerid=peerid
+        self.rfc_title = rfc_title
 
     def __str__(self):
         return str(self.rfc_number)+' '+str(self.rfc_title)+' '+str(self.peerHostname)+' '+str(self.peerid)
@@ -31,7 +32,7 @@ class PeerRecord:
     def __str__(self):
         return str(self.peerHostname)+' '+str(self.peerPortNo)+' '+str(self.peerid)
 
-def register(data, clientsocket):
+def register(data, clientsocket, flag):
     global count
     count = count+1
     rlist=shlex.split(data)
@@ -49,7 +50,7 @@ def register(data, clientsocket):
     reply="Thank you for registering"
     clientsocket.send(reply)
 
-def listAll(clientsocket):
+def listAll(clientsocket, value):
     global status
     global phrase
     list_status(0, '')
@@ -102,6 +103,8 @@ def search(clientsocket, rfc_number):
                 break
     
     if(flag==0):
+        status = 404
+        phrase = 'FILE NOT FOUND'
         phrase, status = search_status_fail(phrase, status)
     
     response="P2P-CI/1.0 "+str(status)+" "+str(phrase)+"\n"
@@ -144,80 +147,79 @@ def init_add(data, rlist):
 def exit(rlist, count):
     global peerhost
     peerport=rlist[5]
-    list_exit(peerport)
+    list_exit(peerport,'OK', 1)
 
     for i in [x for x, y in enumerate(peer_list) if y.peerPortNo == peerport]:
         del peer_list[i]
     clientsocket.send("Bye")
 
 
-def list_exit(peerport):
+def list_exit(peerport,status, flag):
     global peerhost
     for q in peer_list:
         if q.peerPortNo == peerport:
+            peer_status=status
             peerhost = q.peerHostname
             idx2 = [x for x, y in enumerate(index_list) if y.peerHostname == str(peerhost)]
-            for i in sorted(idx2, reverse=True):
-                del index_list[i]
+            if flag:
+                for i in sorted(idx2, reverse=True):
+                    del index_list[i]
 
 
 def remove(rlist,count):
     rfc_pos = 0
     phostname=rlist[4]
-    peerport=rlist[6]
-    rfc_title=rlist[8]
     for q in index_list:
-       if q.rfc_number==rlist[1] and q.peerHostname==phostname and q.peerid == count:
-           del index_list[rfc_pos]
+       if q.rfc_number==rlist[1]:
+        if q.peerHostname==phostname:
+            if q.peerid == count:
+                del index_list[rfc_pos]
        rfc_pos = rfc_pos + 1
     clientsocket.send("Done")
 
 def main_handler(clientsocket, clientaddr):
-    data = clientsocket.recv(1024)
-    global count
+
     print "~"*37
     print "Client Request :"
+    data = clientsocket.recv(1024)
+
     print data
     print "~"*37
+    global count
     rlist=shlex.split(data)
     if rlist[0] == 'REGISTER':
-        register(data, clientsocket)
+        register(data, clientsocket, count)
 
-    elif rlist[0] == 'LISTALL':
-        listAll(clientsocket)
-    
     elif rlist[0] == 'LOOKUP':
-        #RFC_lookup(clientsocket, rlist)
         search(clientsocket, rlist[1])
-        
-    elif rlist[0] == 'ADD':
-        add_RFC(rlist, count, data, clientsocket)
-        
+
     elif rlist[0] == 'EXIT':
         exit(rlist, count)
-        
+
     elif rlist[0] == 'REMOVE':
         remove(rlist, count)
+
+    elif rlist[0] == 'ADD':
+        add_RFC(rlist, count, data, clientsocket)
+
+    elif rlist[0] == 'LISTALL':
+        listAll(clientsocket, count)
 
 
     
 if __name__=="__main__":
-    
-    HOST=socket.gethostname()
-    PORT=SERVER_PORT
-    print HOST
+
     serversocket = socket.socket()
     serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    serversocket.bind((HOST,PORT))
+    serversocket.bind((socket.gethostname(),SERVER_PORT))
 
     serversocket.listen(5)
 
-    print "Server is listening for connection \n Host: "+HOST
+    print "Server is listening for connection \n Host: "+socket.gethostname()
     
     while(1):
-        
         clientsocket, clientaddr = serversocket.accept()
-        serverThread = threading.Thread(target=main_handler, args=(clientsocket,clientaddr))
+        serverThread = threading.Thread(target=main_handler, args=(clientsocket, clientaddr))
         serverThread.start()
     serversocket.close()
 

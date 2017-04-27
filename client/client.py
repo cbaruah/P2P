@@ -1,18 +1,20 @@
-import socket
 import threading
-import os
+import platform
+import socket
 import shlex
 import sys
-import platform
+import os
 
 
 
-rfc_list=[]
+
+OS = platform.system()
 rfc_title=[]
 a=[]
-SERVER_PORT = 7734
 EXIT_FLAG = False
-OS = platform.system()
+SERVER_PORT = 7734
+rfc_list=[]
+
 
 
 def rfc_retrieve(name, sock):
@@ -205,9 +207,8 @@ if __name__== "__main__":
                 input_extra()
                 message = "GET RFC " +str(rfc_number)+ " " +"P2P-CI/1.0\n"+"Host: "+name_peer+"\n"+"OS: "+str(OS)
                 file_name = str(rfc_number)+"-"+rfc_title
-
-                s=socket.socket()
                 peer_ip= socket.gethostbyname(name_peer)
+                s = socket.socket()
                 s.connect((peer_ip,port_peer))
                 print "\nclient connected: \n"
                 s.send(message)
