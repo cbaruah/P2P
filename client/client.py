@@ -206,29 +206,27 @@ if __name__== "__main__":
                 rfc_number,rfc_title=input_data()
                 input_extra()
                 message = "GET RFC " +str(rfc_number)+ " " +"P2P-CI/1.0\n"+"Host: "+name_peer+"\n"+"OS: "+str(OS)
-                file_name = str(rfc_number)+"-"+rfc_title
+
                 peer_ip= socket.gethostbyname(name_peer)
                 s = socket.socket()
                 s.connect((peer_ip,port_peer))
                 print "\nclient connected: \n"
                 s.send(message)
-                reply=s.recv(1024)
-                reply_list=shlex.split(reply)
+                reply_list = shlex.split(s.recv(1024))
                 os.chdir(os.getcwd())
-                file_name=file_name+".txt"
+                file_name=str(rfc_number)+"-"+rfc_title+".txt"
                 if str(reply_list[1])=='200':
                     file1=open(file_name,'wb')
-                    while True:
-                        q=s.recv(1024)
-                        if q:
-                            file1.write(q)
-                            status = True
-                            break
-                        else:
-                            file1.close()
-                            print "File %s downloaded successfully\n" % (file_name)
-                            status = True
-                            break
+
+                    q=s.recv(1024)
+                    if q:
+                        file1.write(q)
+                        status = True
+                    else:
+                        file1.close()
+                        print "File %s downloaded successfully\n" % (file_name)
+                        status = True
+
                     s.close()
                 else:
                     print "File Not Found"
