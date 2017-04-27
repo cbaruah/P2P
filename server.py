@@ -9,8 +9,8 @@ peer_list=list()
 SERVER_PORT = 7734
 rfcList=list()
 
-    
-    
+#Reference was used from www.stackoverflow.com for completion of this project
+
 class RFCRecord:
     def __init__(self, rfc_number = -1, rfc_title = 'None', peerHostname ='None', peerid =-1):
         self.rfc_number = rfc_number
@@ -23,7 +23,7 @@ class RFCRecord:
 
 
 
-class PeerRecord:
+class PeerRecord:                                                                                            
     def __init__(self,peerHostname='None',peerPortNo=10000,peerid=-1):
         self.peerHostname=peerHostname
         self.peerPortNo=peerPortNo
